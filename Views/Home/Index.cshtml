@@ -1,0 +1,29 @@
+﻿@using MotionViewer.Models
+@using System.IO;
+@model IndexViewModel
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+
+
+
+@foreach (var item in Model.directorys)
+{
+    <a href="/Home/dir/@item.Replace("/","$")"> @System.IO.Path.GetFileName(item)</a><br>
+}
+
+
+@foreach (var item in Model.files)
+{
+    @System.IO.Path.GetFileName(item)
+    <br>
+    if(@item.EndsWith(".mp4")){
+        <video src="/Home/file/@item.Replace("/","$")" controls></video>
+    }else
+    {
+        <video src="/Home/file/@item.Replace("/","$")" controls></video>
+    }
+}
