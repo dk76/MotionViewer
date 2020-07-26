@@ -38,7 +38,8 @@ namespace MotionViewer.Controllers
                 root=root.Replace("$","/");
             }
 
-            var dirs=Directory.GetDirectories(root);
+            var dirs=Directory.GetDirectories(root).ToList();
+            dirs.Sort();
 
             foreach(var item in dirs)
                 model.directorys.Add(item);
