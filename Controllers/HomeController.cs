@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using MotionViewer.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
+
 
 
 namespace MotionViewer.Controllers
@@ -42,7 +44,8 @@ namespace MotionViewer.Controllers
                 model.directorys.Add(item);
 
 
-            var files=Directory.GetFiles(root);
+            var files=Directory.GetFiles(root).Where(  item=> (item.EndsWith(".mp4")||item.EndsWith(".avi")) ).ToList();
+            files.Sort();
             foreach(var item in files)
                 model.files.Add(item);
 
@@ -63,10 +66,46 @@ namespace MotionViewer.Controllers
             return View(GetIndexViewModel(dir));
         }
 
+        [Route("Home/preview/{file}")]
+        async public Task<IActionResult> GetPreview(string file)
+        {
+
+            file=file.Replace("$","/");
+            if((file.EndsWith(".mp4")) ||(file.EndsWith(".avi")) )
+            {
+                string tempFileName = System.IO.Path.GetTempPath() + Guid.NewGuid().ToString() + ".jpg"; 
+                string ffmpeg=_configuration["ffmpegPath"];
+
+                Process process = new Process();
+                // Configure the process using the StartInfo properties.
+                process.StartInfo.FileName = ffmpeg;
+                process.StartInfo.Arguments = "-ss 0  -i "+file+" -qscale:v 4 -frames:v 1 "+tempFileName;
+                process.StartInfo.WindowStyle = ProcessWindowStyle.Maximized;
+                process.Start();
+                process.WaitForExit();
+
+
+                var memory = new MemoryStream();  
+                using (var stream = new FileStream(tempFileName, FileMode.Open))  
+                {  
+                    await stream.CopyToAsync(memory);  
+                }  
+                memory.Position = 0;  
+                return File(memory, "image/jpeg", Path.GetFileName(tempFileName));  
+
+            }
+
+            return Content("data");
+
+        }
+
+
         [Route("Home/file/{file}")]
+
         async public Task<IActionResult> GetFile(string file)
         {
             file=file.Replace("$","/");
+            Response.StatusCode=StatusCodes.Status206PartialContent;
             if(file.EndsWith(".mp4"))
             {
 
@@ -76,6 +115,7 @@ namespace MotionViewer.Controllers
                     await stream.CopyToAsync(memory);  
                 }  
             memory.Position = 0;  
+            
             return File(memory, "video/mp4", Path.GetFileName(file));  
             }
             else
