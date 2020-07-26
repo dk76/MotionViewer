@@ -34,9 +34,17 @@ namespace MotionViewer.Controllers
             var model=new IndexViewModel();
 
             if(dir!=""){
+                if(!dir.Replace("$","/").StartsWith(root))
+                {
+                    Response.StatusCode=StatusCodes.Status400BadRequest;
+                    return model;      
+                }    
+
                 root=dir;
                 root=root.Replace("$","/");
             }
+
+            
 
             var dirs=Directory.GetDirectories(root).ToList();
             dirs.Sort();
